@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASRS-v1.1 성인 ADHD 자가 보고 척도</title>
+    <title>ASRS-v1.1 성인 ADHD 자가 보고 척도 / 成人ADHDセルフチェック</title>
     <style>
         :root {
             --primary-color: #6C5CE7;
@@ -31,6 +30,31 @@
             padding: 40px;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 언어 전환 버튼 스타일 */
+        .lang-switch {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lang-btn {
+            border: 1px solid var(--primary-color);
+            background: white;
+            color: var(--primary-color);
+            padding: 5px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: var(--primary-color);
+            color: white;
         }
 
         h1 {
@@ -230,77 +254,191 @@
 <body>
 
     <div class="container">
-        <h1>ASRS-v1.1 성인 ADHD 자가 보고 척도</h1>
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="setLanguage('ko')">한국어</button>
+            <button class="lang-btn" onclick="setLanguage('ja')">日本語</button>
+        </div>
+
+        <h1 id="title-text">ASRS-v1.1 성인 ADHD 자가 보고 척도</h1>
 
         <div class="description">
-            <p><strong>[지침]</strong> 아래의 문항들은 <strong>지난 6개월 동안</strong> 귀하가 어떻게 느끼고 행동했는지를 묻습니다. 각 문항에 대해 귀하의 상태를 가장 잘
-                설명하는 항목을 선택해 주세요.</p>
-            <p>※ 모든 문항에 답변해주셔야 정확한 결과를 볼 수 있습니다.<br>※ 선택한 항목을 한 번 더 누르면 체크가 해제됩니다.</p>
+            <p id="desc-text-1"><strong>[지침]</strong> 아래의 문항들은 <strong>지난 6개월 동안</strong> 귀하가 어떻게 느끼고 행동했는지를 묻습니다. 각 문항에 대해 귀하의 상태를 가장 잘 설명하는 항목을 선택해 주세요.</p>
+            <p id="desc-text-2">※ 모든 문항에 답변해주셔야 정확한 결과를 볼 수 있습니다.<br>※ 선택한 항목을 한 번 더 누르면 체크가 해제됩니다.</p>
         </div>
 
         <form id="asrs-form">
-        </form>
+            </form>
 
-        <button type="button" class="btn-submit" onclick="checkAndCalculate()">결과 확인하기</button>
+        <button type="button" class="btn-submit" id="submit-btn" onclick="checkAndCalculate()">결과 확인하기</button>
 
         <div id="result-area">
         </div>
     </div>
 
     <script>
-        // ASRS-v1.1 질문 데이터 (section 정보는 로직용으로 유지, UI에는 미표시)
-        const questions = [
-            { text: "1. 어떤 일의 어려운 부분(가장 힘든 부분)을 끝내 놓고, 그 일을 마무리를 짓지 못해 곤란을 겪은 적이 있습니까?", section: "Part A", threshold: 2 },
-            { text: "2. 체계가 필요한 일을 해야 할 때 순서대로 진행하기 어려운 경우가 있습니까?", section: "Part A", threshold: 2 },
-            { text: "3. 약속이나 해야 할 일을 잊어버려 곤란을 겪은 적이 있습니까?", section: "Part A", threshold: 2 },
-            { text: "4. 골치 아픈 일(깊은 생각, 긴 집중)은 피하거나 미루는 경우가 있습니까?", section: "Part A", threshold: 3 },
-            { text: "5. 오래 앉아 있을 때, 손을 만지작거리거나 발을 꼼지락거리는 경우가 있습니까?", section: "Part A", threshold: 3 },
-            { text: "6. 마치 모터가 달린 것처럼, 과도하게 혹은 멈출 수 없이 활동을 하는 경우가 있습니까?", section: "Part A", threshold: 3 },
-            { text: "7. 지루하고 어려운 일을 할 때, 부주의해서 실수를 하는 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "8. 지루하고 반복적인 일을 할 때, 주의 집중이 힘든 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "9. 대화 중, 특히 상대방이 당신에게 직접적으로 말하고 있을 때에도, 집중하기 힘든 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "10. 집이나 직장에서 물건을 엉뚱한 곳에 두거나 어디에 두었는지 찾기 어려운 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "11. 주변에서 벌어지는 일이나 소음 때문에 주의가 산만해 지는 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "12. 회의나 다른 사회적 상황에서 계속 앉아 있어야 함에도 잠깐씩 자리를 뜨는 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "13. 안절부절 못하거나 조바심하는 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "14. 혼자 쉬고 있을 때, 긴장을 풀거나 마음을 편하게 갖기 어려운 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "15. 사회적 상황에서 나 혼자 말을 너무 많이 한다고 느끼는 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "16. 대화 도중 상대방이 말을 끝내기 전에 끼어들어 상대방의 말을 끊는 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "17. 차례를 지켜야 하는 상황에서 자신의 차례를 기다리는 것이 어려운 경우가 있습니까?", section: "Part B", threshold: null },
-            { text: "18. 다른 사람이 바쁘게 일할 때, 방해되는 행동을 하는 경우가 있습니까?", section: "Part B", threshold: null }
+        // 다국어 데이터
+        const langData = {
+            ko: {
+                title: "ASRS-v1.1 성인 ADHD 자가 보고 척도",
+                desc1: "<strong>[지침]</strong> 아래의 문항들은 <strong>지난 6개월 동안</strong> 귀하가 어떻게 느끼고 행동했는지를 묻습니다. 각 문항에 대해 귀하의 상태를 가장 잘 설명하는 항목을 선택해 주세요.",
+                desc2: "※ 모든 문항에 답변해주셔야 정확한 결과를 볼 수 있습니다.<br>※ 선택한 항목을 한 번 더 누르면 체크가 해제됩니다.",
+                btn: "결과 확인하기",
+                alertMsg: "모든 항목에 체크해야 결과를 볼 수 있습니다.\n(미응답 문항: {n}개)",
+                unitPartA: "주요 증상 체크: {n}개 / 6개 중",
+                options: [
+                    { label: "전혀 그렇지 않다", score: 0 },
+                    { label: "드물게 그렇다", score: 1 },
+                    { label: "가끔 그렇다", score: 2 },
+                    { label: "자주 그렇다", score: 3 },
+                    { label: "매우 자주 그렇다", score: 4 }
+                ],
+                // questions 배열에는 text만 들어감. section과 threshold는 공통 로직에서 처리
+                questions: [
+                    "1. 어떤 일의 어려운 부분(가장 힘든 부분)을 끝내 놓고, 그 일을 마무리를 짓지 못해 곤란을 겪은 적이 있습니까?",
+                    "2. 체계가 필요한 일을 해야 할 때 순서대로 진행하기 어려운 경우가 있습니까?",
+                    "3. 약속이나 해야 할 일을 잊어버려 곤란을 겪은 적이 있습니까?",
+                    "4. 골치 아픈 일(깊은 생각, 긴 집중)은 피하거나 미루는 경우가 있습니까?",
+                    "5. 오래 앉아 있을 때, 손을 만지작거리거나 발을 꼼지락거리는 경우가 있습니까?",
+                    "6. 마치 모터가 달린 것처럼, 과도하게 혹은 멈출 수 없이 활동을 하는 경우가 있습니까?",
+                    "7. 지루하고 어려운 일을 할 때, 부주의해서 실수를 하는 경우가 있습니까?",
+                    "8. 지루하고 반복적인 일을 할 때, 주의 집중이 힘든 경우가 있습니까?",
+                    "9. 대화 중, 특히 상대방이 당신에게 직접적으로 말하고 있을 때에도, 집중하기 힘든 경우가 있습니까?",
+                    "10. 집이나 직장에서 물건을 엉뚱한 곳에 두거나 어디에 두었는지 찾기 어려운 경우가 있습니까?",
+                    "11. 주변에서 벌어지는 일이나 소음 때문에 주의가 산만해 지는 경우가 있습니까?",
+                    "12. 회의나 다른 사회적 상황에서 계속 앉아 있어야 함에도 잠깐씩 자리를 뜨는 경우가 있습니까?",
+                    "13. 안절부절 못하거나 조바심하는 경우가 있습니까?",
+                    "14. 혼자 쉬고 있을 때, 긴장을 풀거나 마음을 편하게 갖기 어려운 경우가 있습니까?",
+                    "15. 사회적 상황에서 나 혼자 말을 너무 많이 한다고 느끼는 경우가 있습니까?",
+                    "16. 대화 도중 상대방이 말을 끝내기 전에 끼어들어 상대방의 말을 끊는 경우가 있습니까?",
+                    "17. 차례를 지켜야 하는 상황에서 자신의 차례를 기다리는 것이 어려운 경우가 있습니까?",
+                    "18. 다른 사람이 바쁘게 일할 때, 방해되는 행동을 하는 경우가 있습니까?"
+                ],
+                result: {
+                    highTitle: "⚠️ 성인 ADHD 가능성: 매우 높음",
+                    highDesc: "선별 문항(Part A) 중 기준치를 초과하는 항목이 <strong>4개 이상</strong>입니다.<br>이는 성인 ADHD의 증상과 일치하는 부분이 매우 많음을 의미하며, 추가적인 의학적 평가가 필요할 가능성이 높습니다.<br><br><strong>권장 사항:</strong> 이 결과와 체크리스트를 정신건강의학과 전문의에게 보여주시면 보다 정확한 진단을 받는 데 큰 도움이 됩니다.",
+                    lowTitle: "✅ 성인 ADHD 가능성: 낮음",
+                    lowDesc: "선별 문항(Part A) 중 기준치를 초과하는 항목이 4개 미만입니다.<br>현재 귀하가 보고한 증상은 성인 ADHD 진단 기준의 임계치보다 낮습니다.<br>일상 생활에 어려움이 있다면 다른 원인(스트레스, 불안 등)일 수 있습니다."
+                }
+            },
+            ja: {
+                title: "ASRS-v1.1 成人ADHDセルフチェック",
+                desc1: "<strong>[指針]</strong> 以下の質問は、<strong>過去6ヶ月間</strong>のあなたの状態についてお尋ねします。各項目について、自分に最も当てはまるものを選んでください。",
+                desc2: "※ 正確な結果を得るため、すべての項目に回答してください。<br>※ 選択した項目をもう一度押すと選択が解除されます。",
+                btn: "結果を確認する",
+                alertMsg: "すべての項目にチェックしてください。\n(未回答項目: {n}個)",
+                unitPartA: "主な症状チェック: {n}個 / 6個中",
+                options: [
+                    { label: "全くない", score: 0 },
+                    { label: "めったにない", score: 1 },
+                    { label: "時々ある", score: 2 },
+                    { label: "頻繁にある", score: 3 },
+                    { label: "非常に頻繁にある", score: 4 }
+                ],
+                questions: [
+                    "1. 物事の難しい局面を乗り越えた後、詰めが甘くて仕上げられないことがよくありますか。",
+                    "2. 計画性を要する作業を行う際、順序だてて行うことが困難なことがよくありますか。",
+                    "3. 約束や、しなければならない用事を忘れることがよくありますか。",
+                    "4. じっくり考える必要のある課題に取り掛かるのを避けたり、遅らせたりすることがよくありますか。",
+                    "5. 長時間座っていなければならない時、手足をそわそわ動かしたり、もじもじすることがよくありますか。",
+                    "6. まるで何かに駆り立てられるように過度に活動したり、何かせずにはいられないと、感じることがよくありますか。",
+                    "7. つまらない、あるいは難しい仕事をする際、不注意な間違いをすることがよくありますか。",
+                    "8. つまらない、あるいは単調な作業をする際、注意を集中し続けることが困難なことがよくありますか。",
+                    "9. 直接話しかけられているにもかかわらず、話を聞いていないように見えることがよくありますか。",
+                    "10. 家や職場で、物を置き忘れたり、置き場所が分からなくなることがよくありますか。",
+                    "11. 辺りの騒音や雑然とした状況によって、気が散ることがよくありますか。",
+                    "12. 会議や、座っていなければならない状況で、席を離れてしまうことがよくありますか。",
+                    "13. 落ち着かない、あるいはソワソワした感じがすることがよくありますか。",
+                    "14. 自由な時間があっても、くつろいだり、リラックスすることが困難なことがよくありますか。",
+                    "15. 人と話をしている時、自分ばかり喋りすぎると感じることがよくありますか。",
+                    "16. 相手が話し終わる前に、会話を遮って話すことがよくありますか。",
+                    "17. 順番待ちをしなければならない場合、待つことが困難なことがよくありますか。",
+                    "18. 他の人が忙しくしている時に、邪魔をすることがよくありますか。"
+                ],
+                result: {
+                    highTitle: "⚠️ 成人ADHDの可能性: 非常に高い",
+                    highDesc: "選別項目(Part A)のうち、基準値を超える項目が<strong>4つ以上</strong>です。<br>これは成人ADHDの症状と一致する部分が非常に多いことを意味し、追加の医学的評価が必要である可能性が高いです。<br><br><strong>推奨事項:</strong> この結果を精神科専門医との相談時に提示すると、より正確な診断を受けるための大きな助けになります。",
+                    lowTitle: "✅ 成人ADHDの可能性: 低い",
+                    lowDesc: "選別項目(Part A)のうち、基準値を超える項目が4つ未満です。<br>現在報告された症状は、成人ADHD診断基準の閾値より低いです。<br>日常生活に困難がある場合、ストレスや不安など他の原因である可能性があります。"
+                }
+            }
+        };
+
+        // 로직용 메타데이터 (언어 무관 공통)
+        // Part A: 1~6번 (인덱스 0~5)
+        // Threshold: 1~3번은 2(가끔)이상, 4~6번은 3(자주)이상
+        const logicData = [
+            { section: "Part A", threshold: 2 },
+            { section: "Part A", threshold: 2 },
+            { section: "Part A", threshold: 2 },
+            { section: "Part A", threshold: 3 },
+            { section: "Part A", threshold: 3 },
+            { section: "Part A", threshold: 3 },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null },
+            { section: "Part B", threshold: null }
         ];
 
-        const options = [
-            { label: "전혀 그렇지 않다", score: 0 },
-            { label: "드물게 그렇다", score: 1 },
-            { label: "가끔 그렇다", score: 2 },
-            { label: "자주 그렇다", score: 3 },
-            { label: "매우 자주 그렇다", score: 4 }
-        ];
-
-        const formContainer = document.getElementById('asrs-form');
-        // 사용자의 선택 상태를 저장하는 객체 { 질문인덱스: 점수 }
+        let currentLang = 'ko';
         const userAnswers = {};
 
-        // 1. 초기화 및 렌더링
-        function init() {
-            questions.forEach((q, index) => {
-                // 섹션 헤더 생성 로직 삭제됨 (UI 구분 없음)
+        // 언어 설정 함수
+        function setLanguage(lang) {
+            currentLang = lang;
+            
+            // 버튼 스타일 업데이트
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.lang-btn[onclick="setLanguage('${lang}')"]`).classList.add('active');
 
+            // 텍스트 업데이트
+            const data = langData[lang];
+            document.getElementById('title-text').innerText = data.title;
+            document.getElementById('desc-text-1').innerHTML = data.desc1;
+            document.getElementById('desc-text-2').innerHTML = data.desc2;
+            document.getElementById('submit-btn').innerText = data.btn;
+
+            renderForm();
+
+            // 결과창이 열려있다면 결과창도 언어 업데이트
+            const resultArea = document.getElementById('result-area');
+            if (resultArea.style.display === 'block') {
+                checkAndCalculate();
+            }
+        }
+
+        // 폼 렌더링
+        function renderForm() {
+            const formContainer = document.getElementById('asrs-form');
+            const data = langData[currentLang];
+            
+            formContainer.innerHTML = ''; // 초기화
+
+            data.questions.forEach((qText, index) => {
                 const qDiv = document.createElement('div');
                 qDiv.className = 'question-item';
                 qDiv.id = `q-row-${index}`;
 
-                let html = `<span class="question-text">${q.text}</span>`;
+                let html = `<span class="question-text">${qText}</span>`;
                 html += `<div class="options-container">`;
 
-                options.forEach((opt, optIndex) => {
+                data.options.forEach((opt, optIndex) => {
+                    // 선택 상태 확인
+                    const isSelected = userAnswers[index] === opt.score ? 'selected' : '';
+
                     html += `
-                    <div class="option-box" id="opt-box-${index}-${opt.score}" onclick="handleClick(${index}, ${opt.score})">
-                        <div class="custom-circle"><div class="inner-dot"></div></div>
-                        <span class="option-text">${opt.label}</span>
-                    </div>
-                `;
+                        <div class="option-box ${isSelected}" id="opt-box-${index}-${opt.score}" onclick="handleClick(${index}, ${opt.score})">
+                            <div class="custom-circle"><div class="inner-dot"></div></div>
+                            <span class="option-text">${opt.label}</span>
+                        </div>
+                    `;
                 });
                 html += `</div>`;
                 qDiv.innerHTML = html;
@@ -308,59 +446,57 @@
             });
         }
 
-        // 2. 클릭 핸들러 (토글 기능)
-        window.handleClick = function (qIndex, score) {
+        // 클릭 핸들러 (토글 기능)
+        window.handleClick = function(qIndex, score) {
             if (userAnswers[qIndex] === score) {
-                delete userAnswers[qIndex]; // 선택 해제
+                delete userAnswers[qIndex];
                 updateVisualState(qIndex, null);
             } else {
-                userAnswers[qIndex] = score; // 선택
+                userAnswers[qIndex] = score;
                 updateVisualState(qIndex, score);
             }
         };
 
-        // 3. UI 업데이트
         function updateVisualState(qIndex, selectedScore) {
-            // 모든 옵션에서 selected 클래스 제거
-            options.forEach(opt => {
+            // 모든 옵션 선택 해제
+            const data = langData[currentLang];
+            data.options.forEach(opt => {
                 const box = document.getElementById(`opt-box-${qIndex}-${opt.score}`);
-                box.classList.remove('selected');
+                if(box) box.classList.remove('selected');
             });
 
-            // 선택된 옵션에 클래스 추가
+            // 선택된 옵션 활성화
             if (selectedScore !== null) {
                 const selectedBox = document.getElementById(`opt-box-${qIndex}-${selectedScore}`);
-                selectedBox.classList.add('selected');
+                if(selectedBox) selectedBox.classList.add('selected');
                 document.getElementById(`q-row-${qIndex}`).classList.remove('unanswered');
             }
         }
 
-        // 4. 점수 계산 및 결과 확인
-        window.checkAndCalculate = function () {
-            let partACount = 0; // 기준치를 넘는 Part A 문항 수
+        // 결과 계산
+        window.checkAndCalculate = function() {
+            const data = langData[currentLang];
+            let partACount = 0;
             let unansweredList = [];
 
-            // 유효성 검사 및 채점
-            for (let i = 0; i < questions.length; i++) {
+            for (let i = 0; i < logicData.length; i++) {
                 if (userAnswers[i] === undefined) {
                     unansweredList.push(i);
                     document.getElementById(`q-row-${i}`).classList.add('unanswered');
                 } else {
                     document.getElementById(`q-row-${i}`).classList.remove('unanswered');
-
-                    // Part A 채점 로직 (UI엔 안 보이지만 데이터상 Part A 구분됨)
-                    if (questions[i].section === "Part A") {
-                        const threshold = questions[i].threshold;
-                        if (userAnswers[i] >= threshold) {
+                    
+                    // Part A 채점 로직
+                    if (logicData[i].section === "Part A") {
+                        if (userAnswers[i] >= logicData[i].threshold) {
                             partACount++;
                         }
                     }
                 }
             }
 
-            // 미응답 경고
             if (unansweredList.length > 0) {
-                alert(`모든 항목에 체크해야 결과를 볼 수 있습니다.\n(미응답 문항: ${unansweredList.length}개)`);
+                alert(data.alertMsg.replace('{n}', unansweredList.length));
                 const firstUnanswered = document.getElementById(`q-row-${unansweredList[0]}`);
                 firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
@@ -370,50 +506,47 @@
         };
 
         function showResult(score) {
+            const data = langData[currentLang];
             const resultArea = document.getElementById('result-area');
             let html = "";
+            let resData = data.result;
+            const scoreText = data.unitPartA.replace('{n}', score);
 
             // 결과 판정 (Part A 4개 이상 시 높음)
             if (score >= 4) {
                 resultArea.className = "result-danger";
                 html = `
-                <h2>⚠️ 성인 ADHD 가능성: 매우 높음</h2>
-                <div class="score-display">주요 증상 체크: ${score}개 <span style="font-size:0.5em; font-weight:normal; color:#666">/ 6개 중</span></div>
-                <hr style="border:0; border-top:1px solid #FF7675; margin: 20px 0; opacity:0.5">
-                <p style="text-align: left; font-size: 0.95em; line-height:1.7;">
-                    선별 문항(Part A) 중 기준치를 초과하는 항목이 <strong>4개 이상</strong>입니다.<br>
-                    이는 성인 ADHD의 증상과 일치하는 부분이 매우 많음을 의미하며, 추가적인 의학적 평가가 필요할 가능성이 높습니다.<br>
-                    <br>
-                    <strong>권장 사항:</strong> 이 결과와 체크리스트를 정신건강의학과 전문의에게 보여주시면 보다 정확한 진단을 받는 데 큰 도움이 됩니다.
-                </p>
-            `;
+                    <h2>${resData.highTitle}</h2>
+                    <div class="score-display">${scoreText}</div>
+                    <hr style="border:0; border-top:1px solid #FF7675; margin: 20px 0; opacity:0.5">
+                    <p style="text-align: left; font-size: 0.95em; line-height:1.7;">
+                        ${resData.highDesc}
+                    </p>
+                `;
             } else {
                 resultArea.className = "result-safe";
                 html = `
-                <h2>✅ 성인 ADHD 가능성: 낮음</h2>
-                <div class="score-display">주요 증상 체크: ${score}개 <span style="font-size:0.5em; font-weight:normal; color:#666">/ 6개 중</span></div>
-                <hr style="border:0; border-top:1px solid #00B894; margin: 20px 0; opacity:0.5">
-                <p style="text-align: left; font-size: 0.95em;">
-                    선별 문항(Part A) 중 기준치를 초과하는 항목이 4개 미만입니다.<br>
-                    현재 귀하가 보고한 증상은 성인 ADHD 진단 기준의 임계치보다 낮습니다.<br>
-                    일상 생활에 어려움이 있다면 다른 원인(스트레스, 불안 등)일 수 있습니다.
-                </p>
-            `;
+                    <h2>${resData.lowTitle}</h2>
+                    <div class="score-display">${scoreText}</div>
+                    <hr style="border:0; border-top:1px solid #00B894; margin: 20px 0; opacity:0.5">
+                    <p style="text-align: left; font-size: 0.95em;">
+                        ${resData.lowDesc}
+                    </p>
+                `;
             }
 
             resultArea.innerHTML = html;
             resultArea.style.display = 'block';
-
+            
             setTimeout(() => {
                 resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
         }
 
-        // 실행
-        init();
+        // 초기 실행
+        setLanguage('ko');
 
     </script>
 
 </body>
-
 </html>
