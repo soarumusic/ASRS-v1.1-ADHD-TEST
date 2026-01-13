@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASRS-v1.1 성인 ADHD 자가 보고 척도</title>
+    <style>
+        :root {
+            --primary-color: #6C5CE7;
+            --bg-color: #F8F9FA;
+            --card-bg: #ffffff;
+            --text-color: #2D3436;
+            --border-color: #DFE6E9;
+            --error-color: #FF7675;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2D3436;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+            word-break: keep-all;
+        }
+
+        .description {
+            background-color: #F0F3FF;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 40px;
+            font-size: 0.95em;
+            color: #535C68;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .question-item {
+            margin-bottom: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .question-item.unanswered {
+            border: 2px solid var(--error-color);
+            background-color: #FFF0F0;
+        }
+
+        .question-text {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: block;
+            color: #2D3436;
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .option-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 12px 5px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .option-box:hover {
+            background-color: #F1F2F6;
+        }
+
+        .custom-circle {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #B2BEC3;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            background-color: white;
+            pointer-events: none;
+        }
+
+        .custom-circle .inner-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            transform: scale(0);
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .option-text {
+            font-size: 0.85em;
+            color: #636E72;
+            text-align: center;
+            line-height: 1.3;
+            pointer-events: none;
+            word-break: keep-all;
+        }
+
+        .option-box.selected .custom-circle {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        }
+
+        .option-box.selected .custom-circle .inner-dot {
+            transform: scale(1);
+        }
+
+        .option-box.selected .option-text {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .options-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .option-box {
+                flex-direction: row;
+                justify-content: flex-start;
+                padding: 15px;
+                background-color: #FAFAFA;
+                border: 1px solid #F0F0F0;
+            }
+
+            .container {
+                padding: 20px;
+            }
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 40px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        .btn-submit:hover {
+            background-color: #5849BE;
+        }
+
+        /* 결과 화면 */
+        #result-area {
+            display: none;
+            margin-top: 40px;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-danger {
+            background-color: #FFF0F0;
+            border: 2px solid #FF7675;
+            color: #D63031;
+        }
+
+        .result-safe {
+            background-color: #E3FCEF;
+            border: 2px solid #00B894;
+            color: #00896C;
+        }
+
+        .score-display {
+            font-size: 1.8em;
+            font-weight: 800;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>ASRS-v1.1 성인 ADHD 자가 보고 척도</h1>
+
+        <div class="description">
+            <p><strong>[지침]</strong> 아래의 문항들은 <strong>지난 6개월 동안</strong> 귀하가 어떻게 느끼고 행동했는지를 묻습니다. 각 문항에 대해 귀하의 상태를 가장 잘
+                설명하는 항목을 선택해 주세요.</p>
+            <p>※ 모든 문항에 답변해주셔야 정확한 결과를 볼 수 있습니다.<br>※ 선택한 항목을 한 번 더 누르면 체크가 해제됩니다.</p>
+        </div>
+
+        <form id="asrs-form">
+        </form>
+
+        <button type="button" class="btn-submit" onclick="checkAndCalculate()">결과 확인하기</button>
+
+        <div id="result-area">
+        </div>
+    </div>
+
+    <script>
+        // ASRS-v1.1 질문 데이터 (section 정보는 로직용으로 유지, UI에는 미표시)
+        const questions = [
+            { text: "1. 어떤 일의 어려운 부분(가장 힘든 부분)을 끝내 놓고, 그 일을 마무리를 짓지 못해 곤란을 겪은 적이 있습니까?", section: "Part A", threshold: 2 },
+            { text: "2. 체계가 필요한 일을 해야 할 때 순서대로 진행하기 어려운 경우가 있습니까?", section: "Part A", threshold: 2 },
+            { text: "3. 약속이나 해야 할 일을 잊어버려 곤란을 겪은 적이 있습니까?", section: "Part A", threshold: 2 },
+            { text: "4. 골치 아픈 일(깊은 생각, 긴 집중)은 피하거나 미루는 경우가 있습니까?", section: "Part A", threshold: 3 },
+            { text: "5. 오래 앉아 있을 때, 손을 만지작거리거나 발을 꼼지락거리는 경우가 있습니까?", section: "Part A", threshold: 3 },
+            { text: "6. 마치 모터가 달린 것처럼, 과도하게 혹은 멈출 수 없이 활동을 하는 경우가 있습니까?", section: "Part A", threshold: 3 },
+            { text: "7. 지루하고 어려운 일을 할 때, 부주의해서 실수를 하는 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "8. 지루하고 반복적인 일을 할 때, 주의 집중이 힘든 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "9. 대화 중, 특히 상대방이 당신에게 직접적으로 말하고 있을 때에도, 집중하기 힘든 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "10. 집이나 직장에서 물건을 엉뚱한 곳에 두거나 어디에 두었는지 찾기 어려운 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "11. 주변에서 벌어지는 일이나 소음 때문에 주의가 산만해 지는 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "12. 회의나 다른 사회적 상황에서 계속 앉아 있어야 함에도 잠깐씩 자리를 뜨는 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "13. 안절부절 못하거나 조바심하는 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "14. 혼자 쉬고 있을 때, 긴장을 풀거나 마음을 편하게 갖기 어려운 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "15. 사회적 상황에서 나 혼자 말을 너무 많이 한다고 느끼는 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "16. 대화 도중 상대방이 말을 끝내기 전에 끼어들어 상대방의 말을 끊는 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "17. 차례를 지켜야 하는 상황에서 자신의 차례를 기다리는 것이 어려운 경우가 있습니까?", section: "Part B", threshold: null },
+            { text: "18. 다른 사람이 바쁘게 일할 때, 방해되는 행동을 하는 경우가 있습니까?", section: "Part B", threshold: null }
+        ];
+
+        const options = [
+            { label: "전혀 그렇지 않다", score: 0 },
+            { label: "드물게 그렇다", score: 1 },
+            { label: "가끔 그렇다", score: 2 },
+            { label: "자주 그렇다", score: 3 },
+            { label: "매우 자주 그렇다", score: 4 }
+        ];
+
+        const formContainer = document.getElementById('asrs-form');
+        // 사용자의 선택 상태를 저장하는 객체 { 질문인덱스: 점수 }
+        const userAnswers = {};
+
+        // 1. 초기화 및 렌더링
+        function init() {
+            questions.forEach((q, index) => {
+                // 섹션 헤더 생성 로직 삭제됨 (UI 구분 없음)
+
+                const qDiv = document.createElement('div');
+                qDiv.className = 'question-item';
+                qDiv.id = `q-row-${index}`;
+
+                let html = `<span class="question-text">${q.text}</span>`;
+                html += `<div class="options-container">`;
+
+                options.forEach((opt, optIndex) => {
+                    html += `
+                    <div class="option-box" id="opt-box-${index}-${opt.score}" onclick="handleClick(${index}, ${opt.score})">
+                        <div class="custom-circle"><div class="inner-dot"></div></div>
+                        <span class="option-text">${opt.label}</span>
+                    </div>
+                `;
+                });
+                html += `</div>`;
+                qDiv.innerHTML = html;
+                formContainer.appendChild(qDiv);
+            });
+        }
+
+        // 2. 클릭 핸들러 (토글 기능)
+        window.handleClick = function (qIndex, score) {
+            if (userAnswers[qIndex] === score) {
+                delete userAnswers[qIndex]; // 선택 해제
+                updateVisualState(qIndex, null);
+            } else {
+                userAnswers[qIndex] = score; // 선택
+                updateVisualState(qIndex, score);
+            }
+        };
+
+        // 3. UI 업데이트
+        function updateVisualState(qIndex, selectedScore) {
+            // 모든 옵션에서 selected 클래스 제거
+            options.forEach(opt => {
+                const box = document.getElementById(`opt-box-${qIndex}-${opt.score}`);
+                box.classList.remove('selected');
+            });
+
+            // 선택된 옵션에 클래스 추가
+            if (selectedScore !== null) {
+                const selectedBox = document.getElementById(`opt-box-${qIndex}-${selectedScore}`);
+                selectedBox.classList.add('selected');
+                document.getElementById(`q-row-${qIndex}`).classList.remove('unanswered');
+            }
+        }
+
+        // 4. 점수 계산 및 결과 확인
+        window.checkAndCalculate = function () {
+            let partACount = 0; // 기준치를 넘는 Part A 문항 수
+            let unansweredList = [];
+
+            // 유효성 검사 및 채점
+            for (let i = 0; i < questions.length; i++) {
+                if (userAnswers[i] === undefined) {
+                    unansweredList.push(i);
+                    document.getElementById(`q-row-${i}`).classList.add('unanswered');
+                } else {
+                    document.getElementById(`q-row-${i}`).classList.remove('unanswered');
+
+                    // Part A 채점 로직 (UI엔 안 보이지만 데이터상 Part A 구분됨)
+                    if (questions[i].section === "Part A") {
+                        const threshold = questions[i].threshold;
+                        if (userAnswers[i] >= threshold) {
+                            partACount++;
+                        }
+                    }
+                }
+            }
+
+            // 미응답 경고
+            if (unansweredList.length > 0) {
+                alert(`모든 항목에 체크해야 결과를 볼 수 있습니다.\n(미응답 문항: ${unansweredList.length}개)`);
+                const firstUnanswered = document.getElementById(`q-row-${unansweredList[0]}`);
+                firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            showResult(partACount);
+        };
+
+        function showResult(score) {
+            const resultArea = document.getElementById('result-area');
+            let html = "";
+
+            // 결과 판정 (Part A 4개 이상 시 높음)
+            if (score >= 4) {
+                resultArea.className = "result-danger";
+                html = `
+                <h2>⚠️ 성인 ADHD 가능성: 매우 높음</h2>
+                <div class="score-display">주요 증상 체크: ${score}개 <span style="font-size:0.5em; font-weight:normal; color:#666">/ 6개 중</span></div>
+                <hr style="border:0; border-top:1px solid #FF7675; margin: 20px 0; opacity:0.5">
+                <p style="text-align: left; font-size: 0.95em; line-height:1.7;">
+                    선별 문항(Part A) 중 기준치를 초과하는 항목이 <strong>4개 이상</strong>입니다.<br>
+                    이는 성인 ADHD의 증상과 일치하는 부분이 매우 많음을 의미하며, 추가적인 의학적 평가가 필요할 가능성이 높습니다.<br>
+                    <br>
+                    <strong>권장 사항:</strong> 이 결과와 체크리스트를 정신건강의학과 전문의에게 보여주시면 보다 정확한 진단을 받는 데 큰 도움이 됩니다.
+                </p>
+            `;
+            } else {
+                resultArea.className = "result-safe";
+                html = `
+                <h2>✅ 성인 ADHD 가능성: 낮음</h2>
+                <div class="score-display">주요 증상 체크: ${score}개 <span style="font-size:0.5em; font-weight:normal; color:#666">/ 6개 중</span></div>
+                <hr style="border:0; border-top:1px solid #00B894; margin: 20px 0; opacity:0.5">
+                <p style="text-align: left; font-size: 0.95em;">
+                    선별 문항(Part A) 중 기준치를 초과하는 항목이 4개 미만입니다.<br>
+                    현재 귀하가 보고한 증상은 성인 ADHD 진단 기준의 임계치보다 낮습니다.<br>
+                    일상 생활에 어려움이 있다면 다른 원인(스트레스, 불안 등)일 수 있습니다.
+                </p>
+            `;
+            }
+
+            resultArea.innerHTML = html;
+            resultArea.style.display = 'block';
+
+            setTimeout(() => {
+                resultArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // 실행
+        init();
+
+    </script>
+
+</body>
+
+</html>
